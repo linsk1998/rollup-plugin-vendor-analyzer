@@ -1,0 +1,27 @@
+{
+  "name": "rollup-plugin-vendor-analyzer",
+  "version": "0.0.0",
+  "description": "analyze vendor",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+ssh://git@github.com/linsk1998/rollup-plugin-vendor-analyzer.git"
+  },
+  "keywords": [
+    "rollup",
+    "analyze",
+    "vendor"
+  ],
+  "author": "linsk",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/linsk1998/rollup-plugin-vendor-analyzer/issues"
+  },
+  "homepage": "https://github.com/linsk1998/rollup-plugin-vendor-analyzer#readme",
+  "devDependencies": {
+    "@types/node": "^18.11.9"
+  }
+}
