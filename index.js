@@ -2,11 +2,11 @@
 
 const node_modules = "/node_modules/";
 
-module.exports = function analyzer(options) {
+function analyzer(options) {
 	options = options || {};
 	var allowList = options.allowList || options.whiteList;
 	var blockList = options.blockList || options.blackList || ['lodash-utils'];
-	var packageCountWarning = options.packageCountWarning || 20;
+	var packageCountWarning = options.packageCountWarning || 50;
 
 	/** 包中的模块使用数 */
 	var packageCount = new Map();
@@ -15,6 +15,9 @@ module.exports = function analyzer(options) {
 
 	return {
 		transform(code, id) {
+			if(id.startsWith("\0")) {
+				return;
+			}
 			var filePath = id.replace(/\\/g, "/");
 			var lastIndex = filePath.lastIndexOf(node_modules);
 			if(lastIndex < 0) {
@@ -34,18 +37,19 @@ module.exports = function analyzer(options) {
 				count++;
 				packageCount.set(packageName, count);
 			} else {
-				packageCount.set(packageName, 0);
+				packageCount.set(packageName, 1);
 			}
 			if(packagePaths.has(packageName)) {
 				let set = packagePaths.get(packageName);
 				set.add(packagePath);
 			} else {
 				let set = new Set();
-				set.add(set);
+				set.add(packagePath);
 				packagePaths.set(packageName, set);
 			}
 		},
 		generateBundle(options, bundle) {
+			console.log("generateBundle");
 			var countArray = [];
 			packageCount.forEach((count, packageName) => {
 				countArray.push({
@@ -58,29 +62,38 @@ module.exports = function analyzer(options) {
 			countArray.forEach(({ count, packageName }) => {
 				console.log(count, packageName);
 			});
-			var ids = this.getModuleIds();
 			countArray.forEach(({ count, packageName }) => {
 				if(count >= packageCountWarning) {
-					let importedBy = [];
-					ids.forEach((id) => {
+					let importedBy = new Set();
+					for(const id of this.getModuleIds()) {
 						var filePath = id.replace(/\\/g, "/");
 						var lastIndex = filePath.lastIndexOf(node_modules);
 						if(lastIndex < 0) {
-							return;
+							continue;
 						}
 						var packagePath = filePath.substr(0, lastIndex);
 						var pn = filePath.substr(lastIndex + node_modules.length);
+						if(pn.startsWith("@")) {
+							let arr = pn.split("/");
+							arr.length = 2;
+							pn = arr.join("/");
+						} else {
+							pn = pn.split("/")[0];
+						}
 						if(pn == packageName) {
-							let moduleInfo = this.getModuleInfo();
+							let moduleInfo = this.getModuleInfo(id);
 							var importers = moduleInfo.importers;
 							if(importers) {
-								if(importers.every(importer => !importer.replace(/\\/g, "/").startsWith(packagePath))) {
-									importedBy = importedBy.concat(importers);
-								}
+								importers.forEach((importer) => {
+									var importer = importer.replace(/\\/g, "/");
+									if(!importer.includes(node_modules) || !importer.startsWith(packagePath)) {
+										importedBy.add(importer);
+									}
+								});
 							}
 						}
-					});
-					console.log(packageName, "imported by", importedBy);
+					}
+					console.log(packageName, "imported by", Array.from(importedBy));
 				}
 			});
 			packagePaths.forEach((packagePath, packageName) => {
@@ -104,5 +117,6 @@ module.exports = function analyzer(options) {
 		}
 	};
 };
+module.exports = analyzer;
 analyzer.default = analyzer;
 
