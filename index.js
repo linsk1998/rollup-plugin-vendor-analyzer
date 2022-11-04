@@ -49,7 +49,6 @@ function analyzer(options) {
 			}
 		},
 		generateBundle(options, bundle) {
-			console.log("generateBundle");
 			var countArray = [];
 			packageCount.forEach((count, packageName) => {
 				countArray.push({
