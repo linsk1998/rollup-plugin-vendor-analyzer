@@ -14,6 +14,7 @@ function analyzer(options) {
 	var packagePaths = new Map();
 
 	return {
+		name: "vendor-analyzer",
 		transform(code, id) {
 			if(id.startsWith("\0")) {
 				return;
